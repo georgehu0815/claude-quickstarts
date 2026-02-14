@@ -2,13 +2,10 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChartData } from "@/types/chart";
+import { getApiKeyWithPlatformCheck } from "@/lib/token-manager";
 
-// Initialize Anthropic client with correct headers
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
-
-export const runtime = "edge";
+// Use Node.js runtime for keychain access
+export const runtime = "nodejs";
 
 // Helper to validate base64
 const isValidBase64 = (str: string) => {
@@ -102,6 +99,19 @@ const tools: ToolSchema[] = [
 
 export async function POST(req: NextRequest) {
   try {
+    // Initialize Anthropic client with token detection
+    const apiKey = getApiKeyWithPlatformCheck({ verbose: true });
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({
+          error: "No Anthropic API key found. Please set ANTHROPIC_API_KEY or use Agency/Claude Code CLI.",
+        }),
+        { status: 401 },
+      );
+    }
+
+    const anthropic = new Anthropic({ apiKey });
+
     const { messages, fileData, model } = await req.json();
 
     console.log("🔍 Initial Request Data:", {

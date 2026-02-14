@@ -20,6 +20,7 @@ from anthropic import RateLimitError
 from browser_use_demo.loop import APIProvider, sampling_loop
 from browser_use_demo.message_renderer import MessageRenderer, Sender
 from browser_use_demo.tools import ToolResult
+from browser_use_demo.token_manager import get_api_key_from_keychain
 
 PROVIDER_TO_DEFAULT_MODEL_NAME: dict[APIProvider, str] = {
     APIProvider.ANTHROPIC: "claude-sonnet-4-5-20250929",
@@ -29,6 +30,39 @@ PROVIDER_TO_DEFAULT_MODEL_NAME: dict[APIProvider, str] = {
 
 CONFIG_DIR = PosixPath("~/.anthropic").expanduser()
 API_KEY_FILE = CONFIG_DIR / "api_key"
+
+
+def load_api_key_with_fallback() -> str:
+    """
+    Load API key with multiple fallback options:
+    1. From environment variable (ANTHROPIC_API_KEY)
+    2. From storage file (~/.anthropic/api_key)
+    3. From macOS keychain (where Agency/Claude Code store it)
+    """
+    # Try environment variable first
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if api_key:
+        return api_key
+
+    # Try storage file
+    try:
+        if API_KEY_FILE.exists():
+            stored_key = API_KEY_FILE.read_text().strip()
+            if stored_key:
+                return stored_key
+    except Exception:
+        pass  # Silently fail if file read fails
+
+    # Try macOS keychain (Agency/Claude Code)
+    try:
+        api_key = get_api_key_from_keychain(verbose=False)
+        if api_key:
+            return api_key
+    except Exception:
+        pass  # Silently fail on non-macOS or if keychain access fails
+
+    return ""
+
 
 STREAMLIT_STYLE = """
 <style>
@@ -71,7 +105,7 @@ def setup_state():
         "rendered_message_count": 0,  # Track rendered messages to avoid re-rendering
         "last_error": None,  # Store last error message to display persistently
         # API Configuration
-        "api_key": os.environ.get("ANTHROPIC_API_KEY", ""),
+        "api_key": load_api_key_with_fallback(),
         "provider": APIProvider.ANTHROPIC,
         "max_tokens": 8192,
         "model": lambda: PROVIDER_TO_DEFAULT_MODEL_NAME[st.session_state.provider],

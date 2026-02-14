@@ -3,10 +3,7 @@ import { z } from "zod";
 import { retrieveContext, RAGSource } from "@/app/lib/utils";
 import crypto from "crypto";
 import customerSupportCategories from "@/app/lib/customer_support_categories.json";
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { getApiKeyWithPlatformCheck } from "@/lib/token-manager";
 
 // Debug message helper function
 // Input: message string and optional data object
@@ -65,6 +62,38 @@ export async function POST(req: Request) {
   const apiStart = performance.now();
   const measureTime = (label: string) => logTimestamp(label, apiStart);
 
+  // Initialize Anthropic client with automatic token detection
+  let anthropic: Anthropic;
+  let apiKey: string | undefined;
+  let keySource: string;
+
+  try {
+    apiKey = getApiKeyWithPlatformCheck({ verbose: true });
+    keySource = process.env.ANTHROPIC_API_KEY ? "environment" : "keychain";
+
+    if (!apiKey) {
+      throw new Error(
+        'No Anthropic API key found. Please set ANTHROPIC_API_KEY environment variable or ensure credentials are available in macOS keychain.'
+      );
+    }
+
+    anthropic = new Anthropic({ apiKey });
+  } catch (error) {
+    console.error("❌ Failed to initialize Anthropic client:", error);
+    return new Response(
+      JSON.stringify({
+        response: "Service temporarily unavailable. Please contact support.",
+        thinking: "API key initialization failed",
+        user_mood: "neutral",
+        debug: { context_used: false, error: "API_KEY_MISSING" },
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+
   // Extract data from the request body
   const { messages, model, knowledgeBaseId } = await req.json();
   const latestMessage = messages[messages.length - 1].content;
@@ -78,7 +107,8 @@ export async function POST(req: Request) {
     debugMessage("🚀 API route called", {
       messagesReceived: messages.length,
       latestMessageLength: latestMessage.length,
-      anthropicKeySlice: process.env.ANTHROPIC_API_KEY?.slice(0, 4) + "****",
+      anthropicKeySlice: apiKey?.slice(0, 4) + "****",
+      keySource,
     }),
   ).slice(0, MAX_DEBUG_LENGTH);
 

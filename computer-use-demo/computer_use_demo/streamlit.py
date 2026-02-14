@@ -30,6 +30,7 @@ from computer_use_demo.loop import (
     sampling_loop,
 )
 from computer_use_demo.tools import ToolResult, ToolVersion
+from computer_use_demo.token_manager import get_api_key_from_keychain
 
 PROVIDER_TO_DEFAULT_MODEL_NAME: dict[APIProvider, str] = {
     APIProvider.ANTHROPIC: "claude-sonnet-4-5-20250929",
@@ -122,10 +123,8 @@ def setup_state():
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "api_key" not in st.session_state:
-        # Try to load API key from file first, then environment
-        st.session_state.api_key = load_from_storage("api_key") or os.getenv(
-            "ANTHROPIC_API_KEY", ""
-        )
+        # Try to load API key from storage, environment, or keychain
+        st.session_state.api_key = load_api_key_with_fallback()
     if "provider" not in st.session_state:
         st.session_state.provider = (
             os.getenv("API_PROVIDER", "anthropic") or APIProvider.ANTHROPIC
@@ -416,6 +415,34 @@ def load_from_storage(filename: str) -> str | None:
     except Exception as e:
         st.write(f"Debug: Error loading {filename}: {e}")
     return None
+
+
+def load_api_key_with_fallback() -> str:
+    """
+    Load API key with multiple fallback options:
+    1. From storage file (~/.anthropic/api_key)
+    2. From environment variable (ANTHROPIC_API_KEY)
+    3. From macOS keychain (where Agency/Claude Code store it)
+    """
+    # Try storage file first
+    api_key = load_from_storage("api_key")
+    if api_key:
+        return api_key
+
+    # Try environment variable
+    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    if api_key:
+        return api_key
+
+    # Try macOS keychain (Agency/Claude Code)
+    try:
+        api_key = get_api_key_from_keychain(verbose=False)
+        if api_key:
+            return api_key
+    except Exception:
+        pass  # Silently fail on non-macOS or if keychain access fails
+
+    return ""
 
 
 def save_to_storage(filename: str, data: str) -> None:

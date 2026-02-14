@@ -1,6 +1,10 @@
-# Autonomous Coding Agent Demo
+# Autonomous Coding Agent Demo 🔑
 
 A minimal harness demonstrating long-running autonomous coding with the Claude Agent SDK. This demo implements a two-agent pattern (initializer + coding agent) that can build complete applications over multiple sessions.
+
+## ✨ New: Automatic API Key Detection
+
+This demo now includes **automatic API key detection** from macOS keychain! If you use Agency or Claude Code CLI, you don't need to manually set `ANTHROPIC_API_KEY` - the agent will automatically retrieve it from your keychain.
 
 ## Prerequisites
 
@@ -20,14 +24,36 @@ claude --version  # Should be latest version
 pip show claude-code-sdk  # Check SDK is installed
 ```
 
-**API Key:** Set your Anthropic API key:
+**API Key:** You have two options:
+
+**Option 1: Automatic Detection (Recommended)**
+If you use Agency or Claude Code CLI, the agent will automatically retrieve your API key from the macOS keychain - no setup needed!
+
+**Option 2: Environment Variable**
 ```bash
 export ANTHROPIC_API_KEY='your-api-key-here'
 ```
 
+To test token detection:
+```bash
+python test_token_detection.py
+```
+
 ## Quick Start
 
+### 1. Set up virtual environment (recommended)
+
 ```bash
+cd autonomous-coding
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Run the agent
+
+```bash
+# No API key setup needed if you use Agency/Claude Code!
 python autonomous_agent_demo.py --project-dir ./my_project
 ```
 
@@ -63,6 +89,20 @@ python autonomous_agent_demo.py --project-dir ./my_project --max-iterations 3
 - The agent auto-continues between sessions (3 second delay)
 - Press `Ctrl+C` to pause; run the same command to resume
 
+## 🔑 How Token Detection Works
+
+The agent automatically retrieves your API key using these steps:
+
+1. **Checks environment** - `ANTHROPIC_API_KEY` env var first
+2. **Checks keychain** - Retrieves from "Claude Code" keychain service (macOS only)
+3. **Falls back gracefully** - Provides helpful error if no key found
+
+The API key is stored in your macOS keychain when you use:
+- `agency claude` command
+- Claude Code CLI
+
+See [token_manager.py](token_manager.py) for implementation details.
+
 ## Security Model
 
 This demo uses a defense-in-depth security approach (see `security.py` and `client.py`):
@@ -84,14 +124,17 @@ autonomous-coding/
 ├── autonomous_agent_demo.py  # Main entry point
 ├── agent.py                  # Agent session logic
 ├── client.py                 # Claude SDK client configuration
+├── token_manager.py          # Automatic API key detection (NEW)
 ├── security.py               # Bash command allowlist and validation
 ├── progress.py               # Progress tracking utilities
 ├── prompts.py                # Prompt loading utilities
+├── test_token_detection.py   # Test token detection (NEW)
 ├── prompts/
 │   ├── app_spec.txt          # Application specification
 │   ├── initializer_prompt.md # First session prompt
 │   └── coding_prompt.md      # Continuation session prompt
-└── requirements.txt          # Python dependencies
+├── requirements.txt          # Python dependencies
+└── .venv/                    # Virtual environment (created during setup)
 ```
 
 ## Generated Project Structure
@@ -156,7 +199,11 @@ This is normal. The initializer agent is generating 200 detailed test cases, whi
 The agent tried to run a command not in the allowlist. This is the security system working as intended. If needed, add the command to `ALLOWED_COMMANDS` in `security.py`.
 
 **"API key not set"**
-Ensure `ANTHROPIC_API_KEY` is exported in your shell environment.
+You have two options:
+1. Use Agency or Claude Code CLI - the agent will automatically detect your key from keychain
+2. Set `ANTHROPIC_API_KEY` environment variable: `export ANTHROPIC_API_KEY='your-key'`
+
+Run `python test_token_detection.py` to verify token detection is working.
 
 ## License
 

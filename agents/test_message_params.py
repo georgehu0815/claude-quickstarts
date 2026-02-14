@@ -12,6 +12,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.agent import Agent, ModelConfig
+from agents.token_manager import get_api_key_from_keychain
 
 
 class TestMessageParams:
@@ -255,10 +256,17 @@ class TestMessageParams:
 
 def main():
     """Run the test suite."""
-    # Check for API key
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("Error: Please set ANTHROPIC_API_KEY environment variable")
-        sys.exit(1)
+    # Check for API key (try environment, then keychain)
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        api_key = get_api_key_from_keychain(verbose=True)
+        if api_key:
+            print("✓ Using API key from macOS keychain")
+            # Set it in environment so Agent can use it
+            os.environ["ANTHROPIC_API_KEY"] = api_key
+        else:
+            print("Error: No ANTHROPIC_API_KEY found in environment or keychain")
+            sys.exit(1)
         
     # Run tests
     test_suite = TestMessageParams(verbose=True)

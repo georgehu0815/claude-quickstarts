@@ -8,6 +8,7 @@ from typing import Any
 
 from anthropic import Anthropic
 
+from .token_manager import get_api_key_from_keychain
 from .tools.base import Tool
 from .utils.connections import setup_mcp_connections
 from .utils.history_util import MessageHistory
@@ -64,9 +65,22 @@ class Agent:
         self.config = config or ModelConfig()
         self.mcp_servers = mcp_servers or []
         self.message_params = message_params or {}
-        self.client = client or Anthropic(
-            api_key=os.environ.get("ANTHROPIC_API_KEY", "")
-        )
+
+        # Try to get API key from multiple sources:
+        # 1. Provided client
+        # 2. Environment variable
+        # 3. macOS keychain (via token_manager)
+        if client:
+            self.client = client
+        else:
+            api_key = os.environ.get("ANTHROPIC_API_KEY")
+            if not api_key:
+                # Try to get from keychain
+                api_key = get_api_key_from_keychain(verbose=verbose)
+                if api_key and verbose:
+                    print(f"[{self.name}] Using API key from macOS keychain")
+
+            self.client = Anthropic(api_key=api_key or "")
         self.history = MessageHistory(
             model=self.config.model,
             system=self.system,

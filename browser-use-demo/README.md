@@ -1,6 +1,14 @@
-# Browser Automation Demo with Claude
+# Browser Automation Demo with Claude 🔑
 
 A complete reference implementation for building browser automation with Claude using Playwright. This demo provides a containerized Streamlit interface showcasing how to give Claude the ability to navigate websites, interact with DOM elements, extract content, and fill forms.
+
+> [!TIP]
+> **NEW: Automatic API Key Detection** - The demo now automatically detects your API key from multiple sources:
+> 1. Environment variable (`ANTHROPIC_API_KEY`)
+> 2. Storage file (`~/.anthropic/api_key`)
+> 3. macOS Keychain (where Agency and Claude Code store credentials)
+>
+> If you use Agency or Claude Code CLI, you may not need to manually set your API key!
 
 ## Overview
 
@@ -37,6 +45,14 @@ This demo implements a custom browser tool that enables Claude to interact with 
    ```
 
 2. **Configure environment**:
+
+   **Option A: Automatic Detection (Recommended)**
+   If you use Agency or Claude Code CLI, test automatic detection:
+   ```bash
+   python test_token_detection.py
+   ```
+
+   **Option B: Manual Setup**
    ```bash
    cp .env.example .env
    # Edit .env file and add your ANTHROPIC_API_KEY

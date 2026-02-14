@@ -22,6 +22,8 @@ An advanced, fully customizable customer support chat interface powered by Claud
 
 ## ⚙️ Configuration
 
+### Option 1: Environment Variables (Recommended for Production)
+
 Create a `.env.local` file in the root directory with the following variables:
 
 ```
@@ -32,14 +34,43 @@ BAWS_SECRET_ACCESS_KEY=your_aws_secret_key
 
 Note: We are adding a 'B' in front of the AWS environment variables for a reason that will be discussed later in the deployment section.
 
+### Option 2: Automatic Token Detection (macOS only) 🔑
+
+**NEW!** This project now includes automatic API key detection from your macOS keychain!
+
+If you use `agency claude` or the Claude Code CLI, you may not need to set `ANTHROPIC_API_KEY` manually. The application will automatically:
+
+1. Check for `ANTHROPIC_API_KEY` environment variable
+2. Fall back to macOS Keychain (where Agency/Claude Code store credentials)
+3. Provide helpful error messages if no key is found
+
+**To use automatic detection:**
+- Simply run `npm run dev` without setting `ANTHROPIC_API_KEY`
+- The app will attempt to retrieve your credentials from the keychain
+- Check the console for: `[TokenManager] Using ANTHROPIC_API_KEY from environment` or `[TokenManager] Retrieved API key from keychain`
+
+**Benefits:**
+- ✅ No need to manually copy/paste API keys
+- ✅ Secure credential storage via macOS Keychain
+- ✅ Automatic fallback to environment variables
+- ✅ Platform-aware (gracefully falls back on non-macOS)
+
+For more details, see [README_TOKEN_MANAGER.md](README_TOKEN_MANAGER.md).
+
 ##  How to Get Your Keys
 
 ### Claude API Key
 
+**Option 1: Manual Setup**
 1. Visit [console.anthropic.com](https://console.anthropic.com/dashboard)
 2. Sign up or log in to your account
 3. Click on "Get API keys"
 4. Copy the key and paste it into your `.env.local` file
+
+**Option 2: Automatic (macOS only)**
+- If you use `agency claude` or Claude Code CLI, the app can automatically detect your API key from the keychain
+- No manual setup required!
+- The TokenManager will handle credential retrieval automatically
 
 ### AWS Access Key and Secret Key
 
@@ -265,6 +296,39 @@ For production: Build with the desired script (e.g., npm run build:right)
 
 These scripts set the appropriate environment variables before running or building the application, allowing you to easily switch between different configurations.
 This flexibility allows you to tailor the application's layout to your specific needs, whether for testing, development, or production deployment.
+
+## 🔧 Advanced Features
+
+### Automatic API Key Detection
+
+This project includes a TypeScript TokenManager that automatically detects and retrieves your Anthropic API key from multiple sources:
+
+**Features:**
+- ✅ Automatic keychain integration (macOS)
+- ✅ Environment variable fallback
+- ✅ Platform-aware operation
+- ✅ Comprehensive error handling
+- ✅ Verbose logging for debugging
+
+**How it works:**
+1. The chat API route attempts to get the API key on each request
+2. First checks `process.env.ANTHROPIC_API_KEY`
+3. Falls back to macOS Keychain (if on macOS)
+4. Returns helpful error if no key is found
+
+**Testing:**
+```bash
+# Test the TokenManager
+npx tsx lib/test-token-manager.ts
+
+# Run the app (will use automatic detection)
+npm run dev
+```
+
+**For more information:**
+- Full documentation: [README_TOKEN_MANAGER.md](README_TOKEN_MANAGER.md)
+- Unit tests: [lib/__tests__/token-manager.test.ts](lib/__tests__/token-manager.test.ts)
+- Standalone tests: [lib/test-token-manager.ts](lib/test-token-manager.ts)
 
 ## Appendix
 

@@ -13,6 +13,7 @@ from claude_code_sdk import ClaudeCodeOptions, ClaudeSDKClient
 from claude_code_sdk.types import HookMatcher
 
 from security import bash_security_hook
+from token_manager import get_api_key_from_keychain
 
 
 # Puppeteer MCP tools for browser automation
@@ -54,12 +55,23 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     3. Security hooks - Bash commands validated against an allowlist
        (see security.py for ALLOWED_COMMANDS)
     """
+    # Try environment variable first, then keychain
     api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "ANTHROPIC_API_KEY environment variable not set.\n"
-            "Get your API key from: https://console.anthropic.com/"
-        )
+    if api_key:
+        print("✓ Using ANTHROPIC_API_KEY from environment - client.py:61")
+    else:
+        # Try to get from macOS keychain (where Agency/Claude Code store it)
+        api_key = get_api_key_from_keychain(verbose=True)
+        if api_key:
+            print("✓ Using API key from macOS keychain (Agency/Claude Code) - client.py:66")
+        else:
+            raise ValueError(
+                "No Anthropic API key found.\n"
+                "Please either:\n"
+                "  1. Set ANTHROPIC_API_KEY environment variable, OR\n"
+                "  2. Use Agency or Claude Code CLI (stores key in keychain)\n"
+                "\nGet your API key from: https://console.anthropic.com/"
+            )
 
     # Create comprehensive security settings
     # Note: Using relative paths ("./**") restricts access to project directory
@@ -92,11 +104,11 @@ def create_client(project_dir: Path, model: str) -> ClaudeSDKClient:
     with open(settings_file, "w") as f:
         json.dump(security_settings, f, indent=2)
 
-    print(f"Created security settings at {settings_file}")
-    print("   - Sandbox enabled (OS-level bash isolation)")
-    print(f"   - Filesystem restricted to: {project_dir.resolve()}")
-    print("   - Bash commands restricted to allowlist (see security.py)")
-    print("   - MCP servers: puppeteer (browser automation)")
+    print(f"Created security settings at {settings_file} - client.py:107")
+    print("Sandbox enabled (OS-level bash isolation) - client.py:108")
+    print(f"Filesystem restricted to: {project_dir.resolve()} - client.py:109")
+    print("Bash commands restricted to allowlist (see security.py) - client.py:110")
+    print("MCP servers: puppeteer (browser automation) - client.py:111")
     print()
 
     return ClaudeSDKClient(

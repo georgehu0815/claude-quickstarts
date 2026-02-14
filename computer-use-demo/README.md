@@ -1,7 +1,15 @@
-# Anthropic Computer Use Demo
+# Anthropic Computer Use Demo 🔑
 
 > [!NOTE]
 > Now featuring support for the new Claude 4 models! The latest Claude Opus 4.5 (claude-opus-4-5-20251101) is now available, along with Claude Sonnet 4.5 (claude-sonnet-4-5-20250929), Claude Sonnet 4 (claude-sonnet-4-20250514), Claude Opus 4 (claude-opus-4-20250514), and Claude Haiku 4.5 (claude-haiku-4-5-20251001). These models bring next-generation capabilities with the updated str_replace_based_edit_tool that replaces the previous str_replace_editor tool. The undo_edit command has been removed in this latest version for a more streamlined experience.
+
+> [!TIP]
+> **NEW: Automatic API Key Detection** - The demo now automatically detects your API key from multiple sources:
+> 1. Storage file (`~/.anthropic/api_key`)
+> 2. Environment variable (`ANTHROPIC_API_KEY`)
+> 3. macOS Keychain (where Agency and Claude Code store credentials)
+>
+> If you use Agency or Claude Code CLI, you may not need to manually set your API key!
 
 > [!CAUTION]
 > Computer use is a beta feature. Please be aware that computer use poses unique risks that are distinct from standard API features or chat interfaces. These risks are heightened when using computer use to interact with the internet. To minimize risks, consider taking precautions such as:
@@ -165,10 +173,29 @@ When implementing computer use yourself, we recommend using XGA resolution (1024
 
 ## Development
 
+### Setup
+
 ```bash
 ./setup.sh  # configure venv, install development dependencies, and install pre-commit hooks
+```
+
+### Testing Token Detection
+
+```bash
+# Test automatic API key detection
+python test_token_detection.py
+```
+
+This will check for API keys in:
+- Storage file (`~/.anthropic/api_key`)
+- Environment variable
+- macOS Keychain (Agency/Claude Code)
+
+### Running with Docker
+
+```bash
 docker build . -t computer-use-demo:local  # manually build the docker image (optional)
-export ANTHROPIC_API_KEY=%your_api_key%
+export ANTHROPIC_API_KEY=%your_api_key%  # or let it auto-detect from keychain
 docker run \
     -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
     -v $(pwd)/computer_use_demo:/home/computeruse/computer_use_demo/ `# mount local python module for development` \

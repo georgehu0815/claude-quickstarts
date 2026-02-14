@@ -1,8 +1,16 @@
-# Claude Financial Data Analyst
+# Claude Financial Data Analyst 🔑
 
 ![hero](public/hero.png)
 
 A sophisticated Next.js application that combines Claude's capabilities with interactive data visualization to analyze financial data via chat.
+
+> [!TIP]
+> **NEW: Automatic API Key Detection** - The app now automatically detects your API key from:
+> 1. Environment variable (`ANTHROPIC_API_KEY`)
+> 2. `.env.local` file
+> 3. macOS Keychain (where Agency and Claude Code store credentials)
+>
+> If you use Agency or Claude Code CLI, you may not need to manually set your API key!
 
 ## Features
 
@@ -39,10 +47,16 @@ cd anthropic-quickstarts/financial-data-analyst
 npm install
 ```
 
-3. Create a `.env.local` file in the root directory:
-```env
-ANTHROPIC_API_KEY=your_api_key_here
-```
+3. Configure API key (Optional if using Agency/Claude Code):
+
+   **Option A: Automatic Detection (Recommended)**
+   If you use Agency or Claude Code CLI, the app will automatically detect your API key from keychain.
+
+   **Option B: Manual Setup**
+   Create a `.env.local` file in the root directory:
+   ```env
+   ANTHROPIC_API_KEY=your_api_key_here
+   ```
 
 4. Run the development server:
 ```bash
