@@ -112,16 +112,20 @@ class FileReadTool(Tool):
                 return f"Error: {directory} is not a directory"
 
             def list_sync():
-                search_pattern = f"{directory}/{pattern}"
+                search_pattern = str(dir_path / pattern)
                 files = glob.glob(search_pattern)
 
                 if not files:
-                    return f"No files found matching {directory}/{pattern}"
+                    return f"No files found matching {dir_path / pattern}"
 
                 file_list = []
                 for file_path in sorted(files):
                     path_obj = Path(file_path)
-                    rel_path = str(file_path).replace(str(dir_path) + "/", "")
+                    try:
+                        rel_path = path_obj.relative_to(dir_path)
+                    except ValueError:
+                        # If relative_to fails, fall back to name
+                        rel_path = path_obj.name
 
                     if path_obj.is_dir():
                         file_list.append(f"📁 {rel_path}/")
